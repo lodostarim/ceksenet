@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Çek/Senet">
+<meta name="theme-color" content="#0E4F45">
+<title>Çek/Senet</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+  --paper:#F2F4F3;
+  --card:#FFFFFF;
+  --ink:#14201C;
+  --muted:#687772;
+  --line:#D9E0DD;
+  --accent:#0E4F45;
+  --accent-soft:#E3EDEA;
+  --warn:#8A5A12;
+  --warn-soft:#FBF0DC;
+  --danger:#A32017;
+  --danger-soft:#FBE7E5;
+  --ok:#1F6B3B;
+  --ok-soft:#E4F2E8;
+  --r:14px;
+  --nav-h:calc(58px + env(safe-area-inset-bottom));
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#111917;--card:#1A2422;--ink:#EAF0EE;--muted:#93A19C;--line:#2C3A36;
+    --accent:#4FBFA8;--accent-soft:#1B302C;
+    --warn:#D9A441;--warn-soft:#2E2718;
+    --danger:#F0776B;--danger-soft:#33201E;
+    --ok:#5FC98A;--ok-soft:#18301F;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.45;
+  padding-bottom:calc(var(--nav-h) + 12px);
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+
+/* ---------- header ---------- */
+header{
+  position:sticky;top:0;z-index:40;
+  background:var(--accent);color:#F2F4F3;
+  padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+header h1{margin:0;font-size:17px;font-weight:600;letter-spacing:.02em}
+header .sub{font-size:12px;opacity:.72;font-weight:400;letter-spacing:.04em;text-transform:uppercase}
+.hbtn{color:#F2F4F3;font-size:14px;padding:7px 12px;border:1px solid rgba(242,244,243,.32);border-radius:999px}
+.hbtn:active{background:rgba(242,244,243,.16)}
+
+main{padding:14px 14px 0;max-width:640px;margin:0 auto}
+.view{display:none}
+.view.on{display:block}
+
+/* ---------- shared ---------- */
+h2{font-size:13px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:22px 0 9px}
+h2:first-child{margin-top:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.muted{color:var(--muted)}
+.empty{padding:26px 16px;text-align:center;color:var(--muted);font-size:14px;
+  border:1px dashed var(--line);border-radius:var(--r)}
+
+/* signature: chequebook stub */
+.stub{position:relative;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r) var(--r) 0 0;border-bottom:none;padding:18px 18px 20px}
+.stub-edge{height:10px;background-color:var(--card);
+  border-left:1px solid var(--line);border-right:1px solid var(--line);
+  -webkit-mask:radial-gradient(circle at 6px 10px, transparent 5px, #000 5.6px) 0 0/12px 12px repeat-x;
+          mask:radial-gradient(circle at 6px 10px, transparent 5px, #000 5.6px) 0 0/12px 12px repeat-x}
+.stub .lbl{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.stub .big{font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-size:34px;font-weight:600;letter-spacing:-.035em;margin:3px 0 14px;line-height:1.1}
+.stub .split{display:flex;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.stub .split>div{flex:1;min-width:0}
+.stub .split .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;margin-top:2px}
+
+.duo{display:flex;gap:10px;margin-top:14px}
+.duo .card{flex:1;min-width:0;padding:12px}
+.duo .k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.duo .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:16px;font-weight:600;margin-top:3px}
+.duo .n{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* segmented control */
+.seg{display:flex;background:var(--accent-soft);border-radius:11px;padding:3px;margin:0 0 14px}
+.seg button{flex:1;padding:9px 4px;font-size:14px;font-weight:500;border-radius:8px;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+.chips{display:flex;gap:7px;margin:0 0 12px;flex-wrap:wrap}
+.chip{padding:6px 13px;border-radius:999px;border:1px solid var(--line);font-size:13px;color:var(--muted);background:var(--card)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#F2F4F3;font-weight:500}
+
+/* rows */
+.row{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:13px 14px;margin-bottom:8px}
+.row:active{background:var(--accent-soft)}
+.row .main{flex:1;min-width:0}
+.row .t{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .s{font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .amt{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;white-space:nowrap;text-align:right}
+.row .date{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:3px;text-align:right;white-space:nowrap}
+
+.badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;
+  padding:2px 7px;border-radius:5px;margin-top:5px}
+.b-open{background:var(--accent-soft);color:var(--accent)}
+.b-ok{background:var(--ok-soft);color:var(--ok)}
+.b-warn{background:var(--warn-soft);color:var(--warn)}
+.b-late{background:var(--danger-soft);color:var(--danger)}
+.late .amt,.late .date{color:var(--danger)}
+
+/* forms */
+label.f{display:block;margin-bottom:12px}
+label.f>span{display:block;font-size:12px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:5px}
+input,select,textarea{
+  width:100%;padding:12px 13px;font-size:16px;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  appearance:none;-webkit-appearance:none}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23687772' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;padding-right:34px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+input[disabled],select[disabled]{opacity:.42}
+input.money{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:19px;font-weight:600;letter-spacing:-.02em}
+.two{display:flex;gap:10px}
+.two>*{flex:1;min-width:0}
+
+.btn{display:block;width:100%;padding:15px;border-radius:12px;font-size:16px;font-weight:600;
+  background:var(--accent);color:#F2F4F3;text-align:center;margin-top:6px}
+.btn:active{opacity:.82}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.sm{padding:11px;font-size:15px;margin-top:0}
+
+/* bottom nav */
+nav{position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:var(--card);
+  background:color-mix(in srgb,var(--card) 88%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);
+  border-top:1px solid var(--line);
+  display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:8px 2px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:10.5px;letter-spacing:.02em;color:var(--muted)}
+nav button svg{width:23px;height:23px;stroke:currentColor;stroke-width:1.7;fill:none;
+  stroke-linecap:round;stroke-linejoin:round}
+nav button.on{color:var(--accent);font-weight:600}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,18,16,.42);z-index:60;display:none}
+.scrim.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;
+  background:var(--paper);border-radius:20px 20px 0 0;
+  padding:8px 16px calc(env(safe-area-inset-bottom) + 18px);
+  max-height:88vh;overflow-y:auto;transform:translateY(101%);
+  transition:transform .24s cubic-bezier(.32,.72,0,1)}
+.sheet.on{transform:translateY(0)}
+@media (prefers-reduced-motion:reduce){.sheet{transition:none}}
+.grab{width:38px;height:4px;background:var(--line);border-radius:2px;margin:6px auto 14px}
+.sheet h3{margin:0 0 3px;font-size:19px;font-weight:600}
+.sheet .sub{color:var(--muted);font-size:13.5px;margin-bottom:16px}
+.kv{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.kv:last-of-type{border-bottom:none}
+.kv .k{color:var(--muted)}
+.kv .v{font-weight:500;text-align:right}
+.acts{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + 16px);transform:translateX(-50%) translateY(20px);
+  z-index:90;background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:11px;
+  font-size:14px;font-weight:500;opacity:0;transition:.2s;pointer-events:none;max-width:88vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+label.chk{display:flex;align-items:center;gap:11px;margin:-2px 0 16px;font-size:15px}
+label.chk input{width:23px;height:23px;flex:0 0 23px;padding:0;margin:0;
+  appearance:auto;-webkit-appearance:checkbox;accent-color:var(--accent);border-radius:5px}
+.banner{border-radius:12px;padding:11px 13px;font-size:13.5px;margin-bottom:12px;
+  display:flex;gap:12px;align-items:center;justify-content:space-between;
+  background:var(--warn-soft);color:var(--warn)}
+.banner.hot{background:var(--danger-soft);color:var(--danger)}
+.banner button{color:inherit;font-weight:700;text-decoration:underline;white-space:nowrap;font-size:13.5px}
+.note{font-size:13px;color:var(--muted);line-height:1.5;margin:10px 2px 0}
+.note b{color:var(--ink);font-weight:600}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="sub" id="firmaAd">Kayıt defteri</div>
+    <h1>Çek / Senet</h1>
+  </div>
+  <button class="hbtn" id="btnBackup">Yedek</button>
+</header>
+
+<main>
+
+<!-- ============ KASA ============ -->
+<section class="view on" id="v-kasa">
+  <div id="k-banner"></div>
+  <div class="stub">
+    <div class="lbl">Kasa bakiyesi</div>
+    <div class="big" id="k-bal">0,00 ₺</div>
+    <div class="split">
+      <div><div class="lbl">Giren</div><div class="v" id="k-in">0,00 ₺</div></div>
+      <div><div class="lbl">Çıkan</div><div class="v" id="k-out">0,00 ₺</div></div>
+    </div>
+  </div>
+  <div class="stub-edge"></div>
+
+  <div class="duo">
+    <div class="card">
+      <div class="k">Portföyde</div>
+      <div class="v" id="k-port">0,00 ₺</div>
+      <div class="n" id="k-portn">0 evrak</div>
+    </div>
+    <div class="card">
+      <div class="k">Firmada</div>
+      <div class="v" id="k-firm">0,00 ₺</div>
+      <div class="n" id="k-firmn">0 evrak</div>
+    </div>
+  </div>
+
+  <h2>Yaklaşan vadeler</h2>
+  <div id="k-due"></div>
+  <button class="btn ghost" id="k-cal" style="margin-top:12px">Vadeleri takvime aktar</button>
+</section>
+
+<!-- ============ YENİ KAYIT ============ -->
+<section class="view" id="v-yeni">
+  <div class="seg" id="seg-yeni">
+    <button class="on" data-t="tah">Tahsilat</button>
+    <button data-t="ode">Ödeme</button>
+    <button data-t="ciro">Ciro</button>
+  </div>
+
+  <div id="f-tah">
+    <label class="f"><span>Müşteri</span><select id="t-cari"></select></label>
+    <label class="f"><span>Tutar</span><input class="money" id="t-tutar" inputmode="decimal" placeholder="0,00"></label>
+    <label class="f"><span>Ödeme şekli</span>
+      <select id="t-yon"><option>Nakit</option><option>Çek</option><option>Senet</option></select></label>
+    <div class="two">
+      <label class="f"><span>Banka</span><select id="t-banka"></select></label>
+      <label class="f"><span>Evrak no</span><input id="t-evno" inputmode="numeric"></label>
+    </div>
+    <label class="f"><span>Vade</span><input type="date" id="t-vade"></label>
+    <label class="f"><span>Tarih</span><input type="date" id="t-tarih"></label>
+    <label class="f"><span>Açıklama</span><input id="t-acik" placeholder="İsteğe bağlı"></label>
+    <label class="chk"><input type="checkbox" id="t-cal" checked><span>Vadeyi takvime ekle</span></label>
+    <button class="btn" id="t-kaydet">Tahsilatı kaydet</button>
+  </div>
+
+  <div id="f-ode" style="display:none">
+    <label class="f"><span>Firma</span><select id="o-cari"></select></label>
+    <label class="f"><span>Tutar</span><input class="money" id="o-tutar" inputmode="decimal" placeholder="0,00"></label>
+    <label class="f"><span>Ödeme şekli</span>
+      <select id="o-yon"><option>Nakit</option><option>Çek</option><option>Senet</option></select></label>
+    <div class="two">
+      <label class="f"><span>Banka</span><select id="o-banka"></select></label>
+      <label class="f"><span>Evrak no</span><input id="o-evno" inputmode="numeric"></label>
+    </div>
+    <label class="f"><span>Vade</span><input type="date" id="o-vade"></label>
+    <label class="f"><span>Tarih</span><input type="date" id="o-tarih"></label>
+    <label class="f"><span>Açıklama</span><input id="o-acik" placeholder="İsteğe bağlı"></label>
+    <label class="chk"><input type="checkbox" id="o-cal" checked><span>Vadeyi takvime ekle</span></label>
+    <button class="btn" id="o-kaydet">Ödemeyi kaydet</button>
+  </div>
+
+  <div id="f-ciro" style="display:none">
+    <label class="f"><span>Portföydeki evrak</span><select id="c-evrak"></select></label>
+    <label class="f"><span>Ciro edilecek firma</span><select id="c-firma"></select></label>
+    <label class="f"><span>Tarih</span><input type="date" id="c-tarih"></label>
+    <label class="f"><span>Açıklama</span><input id="c-acik" placeholder="İsteğe bağlı"></label>
+    <label class="chk"><input type="checkbox" id="c-cal" checked><span>Vadeyi takvime ekle</span></label>
+    <button class="btn" id="c-kaydet">Ciro et</button>
+    <p class="note">Ciro ettiğin evrak portföyden çıkar, firmaya verilen evraklara geçer. Yanlış firma seçersen evrak kartından <b>ciroyu geri al</b> diyebilirsin.</p>
+  </div>
+</section>
+
+<!-- ============ EVRAK ============ -->
+<section class="view" id="v-evrak">
+  <div class="seg" id="seg-evrak">
+    <button class="on" data-d="ALINAN">Alınan</button>
+    <button data-d="VERILEN">Verilen</button>
+  </div>
+  <div class="chips" id="chips-evrak">
+    <button class="chip on" data-s="acik">Açık</button>
+    <button class="chip" data-s="kapali">Kapanan</button>
+    <button class="chip" data-s="hepsi">Hepsi</button>
+  </div>
+  <div id="e-list"></div>
+</section>
+
+<!-- ============ CARİ ============ -->
+<section class="view" id="v-cari">
+  <div class="seg" id="seg-cari">
+    <button class="on" data-t="MUSTERI">Müşteri</button>
+    <button data-t="FIRMA">Firma</button>
+    <button data-t="BANKA">Banka</button>
+  </div>
+  <div class="two" style="margin-bottom:14px">
+    <input id="ca-ad" placeholder="Yeni müşteri adı">
+    <button class="btn sm" id="ca-ekle" style="flex:0 0 96px">Ekle</button>
+  </div>
+  <div id="ca-list"></div>
+</section>
+
+<!-- ============ FİŞ ============ -->
+<section class="view" id="v-fis">
+  <input id="fi-ara" placeholder="Ara — cari, banka, evrak no, fiş no" style="margin-bottom:12px">
+  <div class="chips" id="chips-fis">
+    <button class="chip on" data-t="">Hepsi</button>
+    <button class="chip" data-t="TAHSILAT">Tahsilat</button>
+    <button class="chip" data-t="ODEME">Ödeme</button>
+    <button class="chip" data-t="CEK">Çek/Senet</button>
+    <button class="chip" data-t="CIRO">Ciro</button>
+  </div>
+  <div id="fi-list"></div>
+</section>
+
+</main>
+
+<nav id="nav">
+  <button class="on" data-v="kasa"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>Kasa</button>
+  <button data-v="yeni"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Yeni</button>
+  <button data-v="evrak"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h4M9 13h6M9 17h4"/></svg>Evrak</button>
+  <button data-v="cari"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.2 2.5-5.2 5.5-5.2s5.5 2 5.5 5.2M16 11h5M16 15h5"/></svg>Cari</button>
+  <button data-v="fis"><svg viewBox="0 0 24 24"><path d="M5 3h14v18l-2.3-1.6L14.4 21 12 19.4 9.6 21 7.3 19.4 5 21z"/><path d="M9 8h6M9 12h6"/></svg>Fiş</button>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"><div class="grab"></div><div id="sheet-body"></div></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* ======================= depo ======================= */
+const KEY = "ceksenet.v1";
+let memFallback = null, storageOK = true;
+
+function rawGet(){
+  try { return localStorage.getItem(KEY); }
+  catch(e){ storageOK = false; return memFallback; }
+}
+function rawSet(v){
+  try { localStorage.setItem(KEY, v); }
+  catch(e){ storageOK = false; memFallback = v; }
+}
+
+const BLANK = { v:1, firma:"", lastBackup:null, cal:[], seq:{txn:0,M:0,F:0,B:0,id:0}, cariler:[], bankalar:[],
+                islemler:[], kasa:[], cariH:[], cek:[] };
+
+let DB;
+function load(){
+  const raw = rawGet();
+  if(!raw){ DB = JSON.parse(JSON.stringify(BLANK)); seedBanks(); save(); return; }
+  try{
+    DB = JSON.parse(raw);
+    for(const k in BLANK) if(!(k in DB)) DB[k] = JSON.parse(JSON.stringify(BLANK[k]));
+  }catch(e){
+    DB = JSON.parse(JSON.stringify(BLANK)); seedBanks();
+  }
+}
+function save(){ rawSet(JSON.stringify(DB)); }
+
+function seedBanks(){
+  ["ZİRAAT BANKASI","DENİZBANK","İŞ BANKASI","HALKBANK","QNB","KUVEYT TÜRK",
+   "TEB","GARANTİ BANKASI","VAKIF","YAPI KREDİ","AKBANK"].forEach(addBanka);
+}
+
+/* ======================= yardımcılar ======================= */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+function money(n){
+  return (Number(n)||0).toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2}) + " ₺";
+}
+function parseMoney(s){
+  // Türkçe yazım: nokta binlik, virgül kuruş. "42.000" = kırk iki bin.
+  s = String(s||"").replace(/[^\d,.-]/g,"").trim();
+  if(!s) return 0;
+  const eksi = s.startsWith("-");
+  s = s.replace(/-/g,"").replace(/\./g,"");
+  const i = s.indexOf(",");
+  if(i > -1) s = s.slice(0,i) + "." + s.slice(i+1).replace(/,/g,"");
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : (eksi ? -n : n);
+}
+const todayISO = () => new Date().toLocaleDateString("sv-SE");
+function fmtDate(iso){
+  if(!iso) return "";
+  const p = iso.split("-");
+  return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : iso;
+}
+function daysTo(iso){
+  const a = new Date(iso + "T00:00:00"), b = new Date(todayISO() + "T00:00:00");
+  return Math.round((a - b) / 86400000);
+}
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg; t.classList.add("on");
+  clearTimeout(toast._h);
+  toast._h = setTimeout(() => t.classList.remove("on"), 2100);
+}
+
+/* ======================= veri işlemleri ======================= */
+function nextCode(kind){
+  DB.seq[kind] = (DB.seq[kind]||0) + 1;
+  return kind + String(DB.seq[kind]).padStart(3,"0");
+}
+function uid(){ DB.seq.id = (DB.seq.id||0) + 1; return "id" + DB.seq.id; }
+function nextTxn(){
+  DB.seq.txn = (DB.seq.txn||0) + 1;
+  return "FIS-" + new Date().getFullYear() + "-" + String(DB.seq.txn).padStart(5,"0");
+}
+
+function addCari(type, name){
+  name = (name||"").trim();
+  if(!name) throw new Error("Ad boş olamaz.");
+  const dup = DB.cariler.find(c => c.active && c.type===type &&
+                                   c.name.toLocaleLowerCase("tr") === name.toLocaleLowerCase("tr"));
+  if(dup) throw new Error("Bu isim zaten kayıtlı: " + dup.code);
+  const c = { id:uid(), code:nextCode(type==="MUSTERI"?"M":"F"),
+              type, name, active:1, created:todayISO() };
+  DB.cariler.push(c); save(); return c;
+}
+function addBanka(name){
+  name = (name||"").trim();
+  if(!name) throw new Error("Banka adı boş olamaz.");
+  const dup = DB.bankalar.find(b => b.active && b.name.toLocaleLowerCase("tr") === name.toLocaleLowerCase("tr"));
+  if(dup) return dup;
+  const b = { id:uid(), code:nextCode("B"), name, active:1 };
+  DB.bankalar.push(b); save(); return b;
+}
+const cariById   = id => DB.cariler.find(c => c.id === id);
+const cariLabel  = id => { const c = cariById(id); return c ? c.code + " " + c.name : "—"; };
+const listCari   = t  => DB.cariler.filter(c => c.active && c.type === t)
+                                   .sort((a,b) => a.code.localeCompare(b.code));
+const listBanka  = () => DB.bankalar.filter(b => b.active);
+
+function addIslem(type, cari_id, amount, desc, date){
+  const txn = nextTxn();
+  DB.islemler.push({ txn, type, cari_id, amount:Number(amount), desc:desc||"",
+                     date:date||todayISO(), created:new Date().toISOString(), active:1 });
+  return txn;
+}
+const kasaAdd  = (txn,dir,amount) => DB.kasa.push({ txn, dir, amount:Number(amount) });
+const cariHAdd = (txn,cari_id,dir,amount) => DB.cariH.push({ txn, cari_id, dir, amount:Number(amount) });
+
+function addNakit(kind, cari_id, amount, desc, date){
+  const txn = addIslem(kind, cari_id, amount, desc, date);
+  kasaAdd(txn, kind === "TAHSILAT" ? "IN" : "OUT", amount);
+  cariHAdd(txn, cari_id, kind === "TAHSILAT" ? "ALACAK" : "BORC", amount);
+  save(); return txn;
+}
+function addEvrak(direction, doc_type, cari_id, ref_no, bank, due, amount, desc, date){
+  const type = (direction==="ALINAN" ? "CEK_ALINAN" : "CEK_VERILEN").replace("CEK", doc_type);
+  const txn = addIslem(type, cari_id, amount, desc, date);
+  DB.cek.push({ txn, doc_type, direction, cari_id, source_cari_id:null, ciro_of:null,
+                ref_no, bank, due, amount:Number(amount), status:"PORTFOY", active:1 });
+  cariHAdd(txn, cari_id, direction === "ALINAN" ? "ALACAK" : "BORC", amount);
+  save(); return txn;
+}
+function ciroEt(srcTxn, firma_id, desc, date){
+  const src = DB.cek.find(c => c.txn === srcTxn && c.active && c.direction === "ALINAN" && c.status === "PORTFOY");
+  if(!src) throw new Error("Evrak portföyde bulunamadı.");
+  const txn = addIslem("CIRO", firma_id, src.amount, desc || "Ciro", date);
+  DB.cek.push({ txn, doc_type:src.doc_type, direction:"VERILEN", cari_id:firma_id,
+                source_cari_id:src.cari_id, ciro_of:src.txn, ref_no:src.ref_no, bank:src.bank,
+                due:src.due, amount:src.amount, status:"PORTFOY", active:1 });
+  cariHAdd(txn, firma_id, "BORC", src.amount);
+  src.status = "CIRO";                 // evrak kaybolmuyor, izi kalıyor
+  save(); return txn;
+}
+function kapat(txn){                   // tahsil / ödeme
+  const c = DB.cek.find(x => x.txn === txn && x.active);
+  if(!c || c.status !== "PORTFOY") return false;
+  const isCiro = (DB.islemler.find(i => i.txn === txn && i.active) || {}).type === "CIRO";
+  if(c.direction === "ALINAN"){ c.status = "TAHSIL"; kasaAdd(txn,"IN",c.amount); }
+  else { c.status = "ODEME"; if(!isCiro) kasaAdd(txn,"OUT",c.amount); }
+  save(); return true;
+}
+function kapatGeriAl(txn){
+  const c = DB.cek.find(x => x.txn === txn && x.active);
+  if(!c || (c.status !== "TAHSIL" && c.status !== "ODEME")) return false;
+  DB.kasa = DB.kasa.filter(k => k.txn !== txn);
+  c.status = "PORTFOY"; save(); return true;
+}
+function silTxn(txn){
+  const c = DB.cek.find(x => x.txn === txn && x.active);
+  if(c && c.status === "CIRO")
+    throw new Error("Bu evrak ciro edilmiş. Önce ciro fişinden ciroyu geri al.");
+  if(c && c.ciro_of){                  // ciro siliniyorsa kaynak evrak portföye dönsün
+    const src = DB.cek.find(x => x.txn === c.ciro_of);
+    if(src){ src.status = "PORTFOY"; src.active = 1; }
+  }
+  DB.kasa  = DB.kasa.filter(k => k.txn !== txn);
+  DB.cariH = DB.cariH.filter(h => h.txn !== txn);
+  if(c){ c.active = 0; c.status = "IPTAL"; }
+  const i = DB.islemler.find(x => x.txn === txn); if(i) i.active = 0;
+  save();
+}
+
+const kasaToplam = () => {
+  const inc = DB.kasa.filter(k=>k.dir==="IN").reduce((s,k)=>s+k.amount,0);
+  const out = DB.kasa.filter(k=>k.dir==="OUT").reduce((s,k)=>s+k.amount,0);
+  return { inc, out, bal: inc - out };
+};
+const cariToplam = id => DB.cariH.filter(h => h.cari_id === id)
+                                 .reduce((s,h) => s + (h.dir === "ALACAK" ? h.amount : -h.amount), 0);
+const acikEvrak  = dir => DB.cek.filter(c => c.active && c.direction === dir && c.status === "PORTFOY");
+
+/* ======================= durum etiketi ======================= */
+function durum(c){
+  if(c.status === "TAHSIL") return { t:"Tahsil edildi", cls:"b-ok" };
+  if(c.status === "ODEME")  return { t:"Ödendi",        cls:"b-ok" };
+  if(c.status === "CIRO")   return { t:"Ciro edildi",   cls:"b-open" };
+  if(c.status === "IPTAL")  return { t:"İptal",         cls:"b-late" };
+  const d = daysTo(c.due);
+  if(d < 0)  return { t:`Vadesi ${Math.abs(d)} gün geçti`, cls:"b-late", late:true };
+  if(d === 0) return { t:"Vadesi bugün", cls:"b-late", late:true };
+  if(d <= 7) return { t:`${d} gün kaldı`, cls:"b-warn" };
+  return { t: c.direction === "ALINAN" ? "Portföyde" : "Firmada", cls:"b-open" };
+}
+function evrakRow(c){
+  const d = durum(c);
+  const ref = [c.bank, c.ref_no].filter(Boolean).join(" · ");
+  return `<button class="row ${d.late?"late":""}" data-txn="${esc(c.txn)}">
+    <div class="main">
+      <div class="t">${esc(cariLabel(c.cari_id))}</div>
+      <div class="s">${esc(ref || (c.doc_type==="SENET"?"Senet":"Çek"))}</div>
+      <span class="badge ${d.cls}">${esc(d.t)}</span>
+    </div>
+    <div><div class="amt">${money(c.amount)}</div><div class="date">${fmtDate(c.due)}</div></div>
+  </button>`;
+}
+
+/* ======================= ekranlar ======================= */
+function gunFark(iso){ return iso ? Math.floor((Date.now() - new Date(iso).getTime())/86400000) : null; }
+function renderBanner(){
+  const el = $("#k-banner");
+  const kayit = DB.islemler.filter(i => i.active).length;
+  if(!storageOK){
+    el.innerHTML = `<div class="banner hot"><span>Kalıcı kayıt kapalı. Uygulamayı Safari'de açıp
+      Paylaş → Ana Ekrana Ekle yap.</span></div>`;
+    return;
+  }
+  if(!kayit){ el.innerHTML = ""; return; }
+  const g = gunFark(DB.lastBackup);
+  if(g === null)
+    el.innerHTML = `<div class="banner"><span>Henüz hiç yedek almadın.</span>
+      <button data-b="1">Yedek al</button></div>`;
+  else if(g >= 30)
+    el.innerHTML = `<div class="banner ${g >= 90 ? "hot" : ""}"><span>Son yedek ${g} gün önce.</span>
+      <button data-b="1">Yedek al</button></div>`;
+  else el.innerHTML = "";
+}
+$("#k-banner").addEventListener("click", e => { if(e.target.closest("[data-b]")) $("#btnBackup").click(); });
+
+function renderKasa(){
+  renderBanner();
+  const { inc, out, bal } = kasaToplam();
+  $("#k-bal").textContent = money(bal);
+  $("#k-in").textContent  = money(inc);
+  $("#k-out").textContent = money(out);
+
+  const al = acikEvrak("ALINAN"), ve = acikEvrak("VERILEN");
+  $("#k-port").textContent  = money(al.reduce((s,c)=>s+c.amount,0));
+  $("#k-portn").textContent = al.length + " evrak";
+  $("#k-firm").textContent  = money(ve.reduce((s,c)=>s+c.amount,0));
+  $("#k-firmn").textContent = ve.length + " evrak";
+
+  const bekleyen = al.concat(ve).filter(c => !DB.cal.includes(c.txn)).length;
+  $("#k-cal").textContent = bekleyen
+    ? `${bekleyen} vadeyi takvime aktar`
+    : (al.length + ve.length ? "Tüm vadeleri takvime yeniden aktar" : "Takvime aktarılacak vade yok");
+  $("#k-cal").style.display = (al.length + ve.length) ? "" : "none";
+
+  const due = al.concat(ve).sort((a,b) => a.due.localeCompare(b.due)).slice(0,15);
+  $("#k-due").innerHTML = due.length
+    ? due.map(evrakRow).join("")
+    : (DB.islemler.filter(i=>i.active).length
+        ? `<div class="empty">Bekleyen evrak yok.</div>`
+        : `<div class="empty">Henüz kayıt yok.<br>Önce <b>Cari</b> sekmesinden müşteri ve firmalarını gir,
+             sonra <b>Yeni</b> sekmesinden tahsilat işle.</div>`);
+}
+
+function fillSelect(el, items, ph){
+  const cur = el.value;
+  el.innerHTML = `<option value="">${ph}</option>` +
+    items.map(i => `<option value="${esc(i.v)}">${esc(i.t)}</option>`).join("");
+  if(cur && items.some(i => String(i.v) === cur)) el.value = cur;
+}
+function renderYeni(){
+  const M = listCari("MUSTERI").map(c => ({ v:c.id, t:c.code + " " + c.name }));
+  const F = listCari("FIRMA").map(c => ({ v:c.id, t:c.code + " " + c.name }));
+  const B = listBanka().map(b => ({ v:b.name, t:b.name }));
+  fillSelect($("#t-cari"), M, "Müşteri seç");
+  fillSelect($("#o-cari"), F, "Firma seç");
+  fillSelect($("#c-firma"), F, "Firma seç");
+  fillSelect($("#t-banka"), B, "Banka seç");
+  fillSelect($("#o-banka"), B, "Banka seç");
+  fillSelect($("#c-evrak"), acikEvrak("ALINAN").sort((a,b)=>a.due.localeCompare(b.due))
+    .map(c => ({ v:c.txn, t:`${fmtDate(c.due)} · ${cariLabel(c.cari_id)} · ${money(c.amount)}` })),
+    "Evrak seç");
+  ["#t-tarih","#o-tarih","#c-tarih","#t-vade","#o-vade"].forEach(s => { if(!$(s).value) $(s).value = todayISO(); });
+  toggleYontem("t"); toggleYontem("o");
+}
+function toggleYontem(p){
+  const cs = $("#"+p+"-yon").value !== "Nakit";
+  ["banka","evno","vade"].forEach(f => { $("#"+p+"-"+f).disabled = !cs; });
+}
+
+let eDir = "ALINAN", eFilt = "acik";
+function renderEvrak(){
+  let rows = DB.cek.filter(c => c.active && c.direction === eDir);
+  if(eFilt === "acik")   rows = rows.filter(c => c.status === "PORTFOY");
+  if(eFilt === "kapali") rows = rows.filter(c => c.status !== "PORTFOY");
+  rows.sort((a,b) => a.due.localeCompare(b.due));
+  $("#e-list").innerHTML = rows.length ? rows.map(evrakRow).join("")
+    : `<div class="empty">Bu listede evrak yok.</div>`;
+}
+
+let cTab = "MUSTERI";
+function renderCari(){
+  $("#ca-ad").placeholder = cTab === "BANKA" ? "Yeni banka adı"
+                          : cTab === "FIRMA" ? "Yeni firma adı" : "Yeni müşteri adı";
+  if(cTab === "BANKA"){
+    const b = listBanka();
+    $("#ca-list").innerHTML = b.length ? b.map(x =>
+      `<button class="row" data-banka="${esc(x.id)}">
+         <div class="main"><div class="t">${esc(x.name)}</div><div class="s">${esc(x.code)}</div></div>
+       </button>`).join("") : `<div class="empty">Banka yok.</div>`;
+    return;
+  }
+  const list = listCari(cTab);
+  $("#ca-list").innerHTML = list.length ? list.map(c => {
+    const net = cariToplam(c.id);
+    const open = DB.cek.filter(x => x.active && x.status === "PORTFOY" &&
+                  (x.cari_id === c.id || x.source_cari_id === c.id)).length;
+    return `<button class="row" data-cari="${esc(c.id)}">
+      <div class="main">
+        <div class="t">${esc(c.name)}</div>
+        <div class="s">${esc(c.code)}${open ? " · " + open + " açık evrak" : ""}</div>
+      </div>
+      <div><div class="amt">${money(Math.abs(net))}</div>
+        <div class="date">${cTab === "MUSTERI" ? "tahsil edilen" : "ödenen"}</div></div>
+    </button>`;
+  }).join("") : `<div class="empty">Kayıt yok. Yukarıdan ekle.</div>`;
+}
+
+let fTip = "", fAra = "";
+function renderFis(){
+  let rows = DB.islemler.filter(i => i.active);
+  if(fTip === "CEK")      rows = rows.filter(i => /^(CEK|SENET)_/.test(i.type));
+  else if(fTip)           rows = rows.filter(i => i.type === fTip);
+  const q = fAra.trim().toLocaleLowerCase("tr");
+  if(q) rows = rows.filter(i => {
+    const c = DB.cek.find(x => x.txn === i.txn) || {};
+    return [i.txn, i.desc, cariLabel(i.cari_id), c.bank, c.ref_no]
+      .filter(Boolean).join(" ").toLocaleLowerCase("tr").includes(q);
+  });
+  rows.sort((a,b) => b.created.localeCompare(a.created));
+  const ad = { TAHSILAT:"Nakit tahsilat", ODEME:"Nakit ödeme", CIRO:"Ciro",
+               CEK_ALINAN:"Alınan çek", SENET_ALINAN:"Alınan senet",
+               CEK_VERILEN:"Verilen çek", SENET_VERILEN:"Verilen senet" };
+  $("#fi-list").innerHTML = rows.length ? rows.slice(0,300).map(i => {
+    const c = DB.cek.find(x => x.txn === i.txn) || {};
+    const ref = [ad[i.type] || i.type, c.bank, c.ref_no].filter(Boolean).join(" · ");
+    return `<button class="row" data-fis="${esc(i.txn)}">
+      <div class="main"><div class="t">${esc(cariLabel(i.cari_id))}</div>
+        <div class="s">${esc(ref)}</div></div>
+      <div><div class="amt">${money(i.amount)}</div><div class="date">${fmtDate(i.date)}</div></div>
+    </button>`;
+  }).join("") : `<div class="empty">Fiş bulunamadı.</div>`;
+}
+
+function renderFirma(){ $("#firmaAd").textContent = DB.firma || "Kayıt defteri"; }
+$("#firmaAd").addEventListener("click", () => {
+  const v = prompt("İşletme adı", DB.firma || "");
+  if(v === null) return;
+  DB.firma = v.trim().slice(0,28); save(); renderFirma();
+});
+function refresh(){ renderFirma(); renderKasa(); renderYeni(); renderEvrak(); renderCari(); renderFis(); }
+
+/* ======================= sheet ======================= */
+let sheetActs = {};
+function openSheet(html, acts){
+  sheetActs = acts || {};
+  $("#sheet-body").innerHTML = html;
+  $("#scrim").classList.add("on");
+  requestAnimationFrame(() => $("#sheet").classList.add("on"));
+}
+function closeSheet(){
+  $("#sheet").classList.remove("on");
+  $("#scrim").classList.remove("on");
+}
+$("#scrim").addEventListener("click", closeSheet);
+$("#sheet").addEventListener("click", e => {
+  const b = e.target.closest("[data-act]");
+  if(!b) return;
+  const fn = sheetActs[b.dataset.act];
+  if(fn) fn();
+});
+
+function evrakSheet(txn){
+  const c = DB.cek.find(x => x.txn === txn);
+  if(!c) return;
+  const d = durum(c), open = c.status === "PORTFOY";
+  const isCiro = (DB.islemler.find(i => i.txn === txn) || {}).type === "CIRO";
+  const acts = [];
+  if(open && c.direction === "ALINAN") acts.push(`<button class="btn" data-act="kapat">Tahsil edildi olarak işaretle</button>`);
+  if(open && c.direction === "VERILEN") acts.push(`<button class="btn" data-act="kapat">Ödendi olarak işaretle</button>`);
+  if(!open && (c.status === "TAHSIL" || c.status === "ODEME"))
+    acts.push(`<button class="btn ghost" data-act="geri">İşlemi geri al</button>`);
+  if(open) acts.push(`<button class="btn ghost" data-act="ics">${DB.cal.includes(txn) ? "Takvime yeniden ekle" : "Takvime hatırlatma ekle"}</button>`);
+  if(isCiro) acts.push(`<button class="btn danger" data-act="sil">Ciroyu geri al</button>`);
+  else acts.push(`<button class="btn danger" data-act="sil">Evrağı sil</button>`);
+
+  openSheet(`
+    <h3>${money(c.amount)}</h3>
+    <div class="sub">${esc(cariLabel(c.cari_id))}</div>
+    <div class="kv"><span class="k">Durum</span><span class="v">${esc(d.t)}</span></div>
+    <div class="kv"><span class="k">Vade</span><span class="v">${fmtDate(c.due)}</span></div>
+    <div class="kv"><span class="k">Tür</span><span class="v">${c.doc_type === "SENET" ? "Senet" : "Çek"} · ${c.direction === "ALINAN" ? "Alınan" : "Verilen"}</span></div>
+    <div class="kv"><span class="k">Banka</span><span class="v">${esc(c.bank || "—")}</span></div>
+    <div class="kv"><span class="k">Evrak no</span><span class="v">${esc(c.ref_no || "—")}</span></div>
+    ${c.source_cari_id ? `<div class="kv"><span class="k">Ciro kaynağı</span><span class="v">${esc(cariLabel(c.source_cari_id))}</span></div>` : ""}
+    <div class="kv"><span class="k">Takvim</span><span class="v">${DB.cal.includes(txn) ? "Eklendi" : "Eklenmedi"}</span></div>
+    <div class="kv"><span class="k">Fiş no</span><span class="v num">${esc(c.txn)}</span></div>
+    <div class="acts">${acts.join("")}</div>`, {
+    kapat(){ kapat(txn) ? (toast("İşlendi"), closeSheet(), refresh()) : toast("Bu evrak zaten işlem görmüş."); },
+    geri(){ kapatGeriAl(txn); toast("Geri alındı"); closeSheet(); refresh(); },
+    ics(){ takvimeEkle([c], c.txn + ".ics"); },
+    sil(){
+      if(!confirm("Silinsin mi? Bu işlem geri alınamaz.")) return;
+      try{ silTxn(txn); toast("Silindi"); closeSheet(); refresh(); }
+      catch(e){ alert(e.message); }
+    }
+  });
+}
+
+function fisSheet(txn){
+  const i = DB.islemler.find(x => x.txn === txn);
+  if(!i) return;
+  const c = DB.cek.find(x => x.txn === txn);
+  const k = DB.kasa.filter(x => x.txn === txn);
+  openSheet(`
+    <h3>${money(i.amount)}</h3>
+    <div class="sub">${esc(cariLabel(i.cari_id))}</div>
+    <div class="kv"><span class="k">Tarih</span><span class="v">${fmtDate(i.date)}</span></div>
+    <div class="kv"><span class="k">Kasa etkisi</span><span class="v">${
+      k.length ? k.map(x => (x.dir === "IN" ? "Giren " : "Çıkan ") + money(x.amount)).join(", ") : "Yok"}</span></div>
+    ${c ? `<div class="kv"><span class="k">Evrak</span><span class="v">${esc([c.bank,c.ref_no].filter(Boolean).join(" · ") || "—")}</span></div>
+           <div class="kv"><span class="k">Vade</span><span class="v">${fmtDate(c.due)}</span></div>` : ""}
+    ${i.desc ? `<div class="kv"><span class="k">Açıklama</span><span class="v">${esc(i.desc)}</span></div>` : ""}
+    <div class="kv"><span class="k">Fiş no</span><span class="v num">${esc(i.txn)}</span></div>
+    <div class="acts"><button class="btn danger" data-act="sil">Fişi sil</button></div>`, {
+    sil(){
+      if(!confirm("Fiş silinsin mi? Kasa ve cari hareketleri de geri alınır.")) return;
+      try{ silTxn(txn); toast("Silindi"); closeSheet(); refresh(); }
+      catch(e){ alert(e.message); }
+    }
+  });
+}
+
+function cariSheet(id){
+  const c = cariById(id); if(!c) return;
+  const net = Math.abs(cariToplam(id));
+  const evr = DB.cek.filter(x => x.active && (x.cari_id === id || x.source_cari_id === id))
+                    .sort((a,b) => a.due.localeCompare(b.due));
+  openSheet(`
+    <h3>${esc(c.name)}</h3>
+    <div class="sub">${esc(c.code)} · ${c.type === "MUSTERI" ? "Müşteri" : "Firma"}</div>
+    <div class="kv"><span class="k">${c.type === "MUSTERI" ? "Toplam tahsilat" : "Toplam ödeme"}</span><span class="v">${money(net)}</span></div>
+    <div class="kv"><span class="k">Açık evrak</span><span class="v">${evr.filter(x => x.status === "PORTFOY").length} adet</span></div>
+    ${evr.length ? `<h2 style="margin-top:18px">Evraklar</h2>${evr.slice(0,20).map(evrakRow).join("")}` : ""}
+    <div class="acts"><button class="btn danger" data-act="sil">Cariyi sil</button></div>`, {
+    sil(){
+      if(DB.islemler.some(i => i.active && i.cari_id === id))
+        return alert("Bu cari işlem görmüş, silinemez.");
+      if(!confirm("Silinsin mi?")) return;
+      c.active = 0; save(); toast("Silindi"); closeSheet(); refresh();
+    }
+  });
+}
+
+/* ======================= takvim & yedek ======================= */
+function dl(name, text, mime){
+  const b = new Blob([text], { type: mime });
+  const u = URL.createObjectURL(b);
+  const a = document.createElement("a");
+  a.href = u; a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 4000);
+}
+function esc5545(x){ return String(x||"").replace(/([,;\\])/g,"\\$1").replace(/\r?\n/g," "); }
+
+function ertesiGun(iso){
+  const t = new Date(iso + "T12:00:00");
+  t.setDate(t.getDate() + 1);
+  return t.toLocaleDateString("sv-SE").replace(/-/g,"");
+}
+function fold(line){
+  const b = new TextEncoder().encode(line);
+  if(b.length <= 73) return line;
+  const out = []; let cur = "", len = 0;
+  for(const ch of line){
+    const w = new TextEncoder().encode(ch).length;
+    if(len + w > 72){ out.push(cur); cur = " " + ch; len = 1 + w; }
+    else { cur += ch; len += w; }
+  }
+  out.push(cur);
+  return out.join("\r\n");
+}
+function vevent(c){
+  const d = c.due.replace(/-/g,"");
+  const yon = c.direction === "ALINAN" ? "Tahsilat" : "Ödeme";
+  const tur = c.doc_type === "SENET" ? "Senet" : "Çek";
+  return [
+    "BEGIN:VEVENT",
+    "UID:" + c.txn + "@ceksenet",
+    "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g,"").split(".")[0] + "Z",
+    "DTSTART;VALUE=DATE:" + d,
+    "DTEND;VALUE=DATE:" + ertesiGun(c.due),
+    "SUMMARY:" + esc5545(`${yon} ${money(c.amount)} — ${cariLabel(c.cari_id)}`),
+    "DESCRIPTION:" + esc5545(`${tur} · ${c.bank||""} ${c.ref_no||""} · Fiş ${c.txn}`),
+    "BEGIN:VALARM","TRIGGER:-P7D","ACTION:DISPLAY","DESCRIPTION:Vadeye 7 gün","END:VALARM",
+    "BEGIN:VALARM","TRIGGER:-P1D","ACTION:DISPLAY","DESCRIPTION:Vade yarın","END:VALARM",
+    "END:VEVENT"
+  ];
+}
+function icsBody(list){
+  let L = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//CekSenet//TR",
+           "CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:Çek/Senet vadeleri"];
+  list.forEach(c => { L = L.concat(vevent(c)); });
+  L.push("END:VCALENDAR","");
+  return L.map(fold).join("\r\n");
+}
+
+/* iOS'ta en güvenilir yol paylaşım sayfası; olmazsa indirme, o da olmazsa data URL */
+async function sendFile(name, text, mime){
+  try{
+    const f = new File([text], name, { type:mime });
+    if(navigator.canShare && navigator.canShare({ files:[f] })){
+      await navigator.share({ files:[f] });
+      return "share";
+    }
+  }catch(e){
+    if(e && e.name === "AbortError") return "abort";
+  }
+  try{ dl(name, text, mime); return "dl"; }
+  catch(e){
+    location.href = "data:" + mime + ";charset=utf-8," + encodeURIComponent(text);
+    return "data";
+  }
+}
+function calMark(list){
+  list.forEach(c => { if(!DB.cal.includes(c.txn)) DB.cal.push(c.txn); });
+  save();
+}
+async function takvimeEkle(list, isim){
+  list = list.filter(c => c && c.due);
+  if(!list.length){ toast("Takvime eklenecek vade yok"); return; }
+  const r = await sendFile(isim, icsBody(list), "text/calendar");
+  if(r === "abort") return;
+  calMark(list);
+  toast(r === "share" ? "Takvim'e ekle'yi seç" : list.length + " vade indirildi");
+  refresh();
+}
+
+$("#k-cal").addEventListener("click", () => {
+  const acik = acikEvrak("ALINAN").concat(acikEvrak("VERILEN"));
+  const yeni = acik.filter(c => !DB.cal.includes(c.txn));
+  const list = yeni.length ? yeni : acik;
+  takvimeEkle(list, "vadeler-" + todayISO() + ".ics");
+});
+
+function csvDokum(){
+  const ad = { TAHSILAT:"Nakit tahsilat", ODEME:"Nakit ödeme", CIRO:"Ciro",
+               CEK_ALINAN:"Alınan çek", SENET_ALINAN:"Alınan senet",
+               CEK_VERILEN:"Verilen çek", SENET_VERILEN:"Verilen senet" };
+  const q = v => '"' + String(v ?? "").replace(/"/g,'""') + '"';
+  const satir = [["Tarih","Fiş No","Tip","Cari","Banka","Evrak No","Vade","Tutar","Durum","Açıklama"]];
+  DB.islemler.filter(i => i.active)
+    .sort((a,b) => a.created.localeCompare(b.created))
+    .forEach(i => {
+      const c = DB.cek.find(x => x.txn === i.txn) || {};
+      satir.push([fmtDate(i.date), i.txn, ad[i.type] || i.type, cariLabel(i.cari_id),
+                  c.bank || "", c.ref_no || "", c.due ? fmtDate(c.due) : "",
+                  Number(i.amount).toFixed(2).replace(".",","),
+                  c.txn ? durum(c).t : "Nakit", i.desc || ""]);
+    });
+  return "\uFEFF" + satir.map(r => r.map(q).join(";")).join("\r\n");
+}
+
+$("#btnBackup").addEventListener("click", () => {
+  const kayit = DB.islemler.filter(i => i.active).length;
+  const g = gunFark(DB.lastBackup);
+  const son = DB.lastBackup
+    ? `Son yedek ${fmtDate(DB.lastBackup.slice(0,10))} (${g} gün önce)`
+    : "Henüz yedek alınmadı";
+  openSheet(`
+    <h3>Yedek</h3>
+    <div class="sub">${kayit} fiş · ${DB.cariler.filter(c=>c.active).length} cari · ${son}</div>
+    ${storageOK ? "" : `<div class="empty" style="border-color:var(--danger);color:var(--danger);margin-bottom:14px">
+       Bu ortamda kalıcı kayıt kapalı. Safari'de açıp ana ekrana ekle.</div>`}
+    <div class="acts">
+      <button class="btn" data-act="ex">Yedek al ve Dosyalar'a kaydet</button>
+      <button class="btn ghost" data-act="csv">Excel dökümü (CSV)</button>
+      <button class="btn ghost" data-act="im">Yedekten geri yükle</button>
+    </div>
+    <p class="note">Yedek düğmesine basınca paylaşım penceresi açılır; oradan
+      <b>Dosyalar'a Kaydet → iCloud Drive</b> seç. Böylece kayıtlar telefonun dışında da durur ve
+      telefon değişse bile kaybolmaz. Ayda bir yeterli — 30 gün geçince Kasa ekranında hatırlatırım.</p>
+    <p class="note">CSV dökümü geri yükleme için değil, arşiv için: Excel veya Numbers'ta açılır,
+      yıllar sonra bu uygulama olmasa bile okunur.</p>`, {
+    async ex(){
+      const r = await sendFile("ceksenet-yedek-" + todayISO() + ".json",
+                              JSON.stringify(DB), "application/json");
+      if(r === "abort") return;
+      DB.lastBackup = new Date().toISOString(); save();
+      toast("Yedek alındı"); closeSheet(); refresh();
+    },
+    csv(){ sendFile("ceksenet-" + todayISO() + ".csv", csvDokum(), "text/csv"); },
+    im(){
+      const inp = document.createElement("input");
+      inp.type = "file"; inp.accept = ".json,application/json";
+      inp.onchange = () => {
+        const f = inp.files[0]; if(!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+          try{
+            const o = JSON.parse(r.result);
+            if(!o || !Array.isArray(o.cariler) || !Array.isArray(o.islemler)) throw new Error("bad");
+            if(!confirm(`Yedekte ${o.islemler.filter(i=>i.active).length} fiş var. ` +
+                        "Şu anki tüm kayıtlar silinip bununla değiştirilecek. Devam?")) return;
+            DB = o;
+            for(const k in BLANK) if(!(k in DB)) DB[k] = JSON.parse(JSON.stringify(BLANK[k]));
+            save(); closeSheet(); refresh(); toast("Yedek yüklendi");
+          }catch(e){ alert("Dosya okunamadı. Doğru yedek dosyasını seçtiğinden emin ol."); }
+        };
+        r.readAsText(f);
+      };
+      inp.click();
+    }
+  });
+});
+
+/* ======================= olaylar ======================= */
+$("#nav").addEventListener("click", e => {
+  const b = e.target.closest("button[data-v]"); if(!b) return;
+  $$("#nav button").forEach(x => x.classList.toggle("on", x === b));
+  $$(".view").forEach(v => v.classList.toggle("on", v.id === "v-" + b.dataset.v));
+  window.scrollTo(0,0);
+});
+
+$("#seg-yeni").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  $$("#seg-yeni button").forEach(x => x.classList.toggle("on", x === b));
+  ["tah","ode","ciro"].forEach(t => { $("#f-"+t).style.display = t === b.dataset.t ? "" : "none"; });
+});
+$("#seg-evrak").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  $$("#seg-evrak button").forEach(x => x.classList.toggle("on", x === b));
+  eDir = b.dataset.d; renderEvrak();
+});
+$("#chips-evrak").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  $$("#chips-evrak button").forEach(x => x.classList.toggle("on", x === b));
+  eFilt = b.dataset.s; renderEvrak();
+});
+$("#seg-cari").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  $$("#seg-cari button").forEach(x => x.classList.toggle("on", x === b));
+  cTab = b.dataset.t; renderCari();
+});
+$("#chips-fis").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  $$("#chips-fis button").forEach(x => x.classList.toggle("on", x === b));
+  fTip = b.dataset.t; renderFis();
+});
+$("#fi-ara").addEventListener("input", e => { fAra = e.target.value; renderFis(); });
+
+$("#e-list").addEventListener("click", e => {
+  const b = e.target.closest("[data-txn]"); if(b) evrakSheet(b.dataset.txn);
+});
+$("#k-due").addEventListener("click", e => {
+  const b = e.target.closest("[data-txn]"); if(b) evrakSheet(b.dataset.txn);
+});
+$("#fi-list").addEventListener("click", e => {
+  const b = e.target.closest("[data-fis]"); if(b) fisSheet(b.dataset.fis);
+});
+$("#ca-list").addEventListener("click", e => {
+  const b = e.target.closest("[data-cari]");
+  if(b) cariSheet(b.dataset.cari);
+});
+
+["t","o"].forEach(p => $("#"+p+"-yon").addEventListener("change", () => toggleYontem(p)));
+["t-tutar","o-tutar"].forEach(id => {
+  const el = $("#"+id);
+  el.addEventListener("blur", () => {
+    const v = parseMoney(el.value);
+    el.value = v ? v.toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "";
+  });
+});
+
+$("#ca-ekle").addEventListener("click", () => {
+  const ad = $("#ca-ad").value;
+  try{
+    if(cTab === "BANKA") addBanka(ad); else addCari(cTab, ad);
+    $("#ca-ad").value = ""; toast("Eklendi"); refresh();
+  }catch(err){ alert(err.message); }
+});
+$("#ca-ad").addEventListener("keydown", e => { if(e.key === "Enter") $("#ca-ekle").click(); });
+
+function kaydet(p, dirn){
+  const cari = $("#"+p+"-cari").value;
+  if(!cari) return alert(dirn === "ALINAN" ? "Müşteri seç." : "Firma seç.");
+  const tutar = parseMoney($("#"+p+"-tutar").value);
+  if(tutar <= 0) return alert("Tutar gir.");
+  const yon  = $("#"+p+"-yon").value;
+  const acik = $("#"+p+"-acik").value.trim();
+  const tarih = $("#"+p+"-tarih").value || todayISO();
+  try{
+    if(yon === "Nakit"){
+      addNakit(dirn === "ALINAN" ? "TAHSILAT" : "ODEME", cari, tutar, acik, tarih);
+    }else{
+      const bank = $("#"+p+"-banka").value, ref = $("#"+p+"-evno").value.trim();
+      const vade = $("#"+p+"-vade").value;
+      if(!bank || !ref) return alert("Çek/senet için banka ve evrak no gerekli.");
+      if(!vade) return alert("Vade tarihi gir.");
+      const txn = addEvrak(dirn, yon === "Senet" ? "SENET" : "CEK", cari, ref, bank, vade, tutar, acik, tarih);
+      ["tutar","evno","acik"].forEach(f => $("#"+p+"-"+f).value = "");
+      refresh();
+      if($("#"+p+"-cal").checked){ takvimeEkle([DB.cek.find(c => c.txn === txn)], txn + ".ics"); return; }
+    }
+    ["tutar","evno","acik"].forEach(f => $("#"+p+"-"+f).value = "");
+    toast("Kaydedildi"); refresh();
+  }catch(err){ alert(err.message); }
+}
+$("#t-kaydet").addEventListener("click", () => kaydet("t","ALINAN"));
+$("#o-kaydet").addEventListener("click", () => kaydet("o","VERILEN"));
+
+$("#c-kaydet").addEventListener("click", () => {
+  const ev = $("#c-evrak").value, fi = $("#c-firma").value;
+  if(!ev) return alert("Ciro edilecek evrağı seç.");
+  if(!fi) return alert("Firma seç.");
+  try{
+    const txn = ciroEt(ev, fi, $("#c-acik").value.trim(), $("#c-tarih").value || todayISO());
+    $("#c-acik").value = ""; refresh();
+    if($("#c-cal").checked) takvimeEkle([DB.cek.find(c => c.txn === txn)], txn + ".ics");
+    else toast("Ciro edildi");
+  }catch(err){ alert(err.message); }
+});
+
+/* ======================= başlat ======================= */
+load();
+refresh();
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+if(navigator.storage && navigator.storage.persist){
+  navigator.storage.persisted().then(p => { if(!p) navigator.storage.persist(); }).catch(()=>{});
+}
+if(!storageOK) setTimeout(() => toast("Kalıcı kayıt kapalı — Safari'de aç"), 700);
+</script>
+</body>
+</html>
