@@ -363,7 +363,7 @@ function rawSet(v){
   catch(e){ storageOK = false; memFallback = v; }
 }
 
-const BLANK = { v:1, firma:"", lastBackup:null, calMode:"share", cal:[], seq:{txn:0,M:0,F:0,B:0,id:0}, cariler:[], bankalar:[],
+const BLANK = { v:1, firma:"", lastBackup:null, calMode:"share", calSeq:0, cal:[], seq:{txn:0,M:0,F:0,B:0,id:0}, cariler:[], bankalar:[],
                 islemler:[], kasa:[], cariH:[], cek:[] };
 
 let DB;
@@ -848,6 +848,8 @@ function vevent(c){
     "BEGIN:VEVENT",
     "UID:" + c.txn + "@ceksenet",
     "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g,"").split(".")[0] + "Z",
+    "LAST-MODIFIED:" + new Date().toISOString().replace(/[-:]/g,"").split(".")[0] + "Z",
+    "SEQUENCE:" + (DB.calSeq || 0),
     "DTSTART;VALUE=DATE:" + d,
     "DTEND;VALUE=DATE:" + ertesiGun(c.due),
     "SUMMARY:" + esc5545(`${yon} ${money(c.amount)} — ${cariLabel(c.cari_id)}`),
@@ -867,20 +869,25 @@ function icsBody(list){
 
 /* iOS'ta en güvenilir yol paylaşım sayfası; olmazsa indirme, o da olmazsa data URL */
 async function sendFile(name, text, mime){
-  try{
-    const f = new File([text], name, { type:mime });
-    if(navigator.canShare && navigator.canShare({ files:[f] })){
-      await navigator.share({ files:[f] });
-      return "share";
+  if(navigator.share){
+    let f = null;
+    try{ f = new File([text], name, { type:mime }); }catch(e){}
+    if(f && (!navigator.canShare || navigator.canShare({ files:[f] }))){
+      try{
+        await navigator.share({ files:[f] });
+        return "share";
+      }catch(e){
+        const ad = (e && e.name) || "";
+        if(ad === "AbortError") return "abort";
+        // iOS bazen paylaşımı reddediyor; sessizce kaybolmak yerine dosya yoluna geç
+        toast("Paylaşım açılmadı, dosyaya indiriliyor");
+        try{ dl(name, text, mime); return "dl"; }
+        catch(e2){ toast("Takvim dosyası oluşturulamadı"); return "hata"; }
+      }
     }
-  }catch(e){
-    if(e && e.name === "AbortError") return "abort";
   }
   try{ dl(name, text, mime); return "dl"; }
-  catch(e){
-    location.href = "data:" + mime + ";charset=utf-8," + encodeURIComponent(text);
-    return "data";
-  }
+  catch(e){ toast("Takvim dosyası oluşturulamadı"); return "hata"; }
 }
 function calMark(list){
   list.forEach(c => { if(!DB.cal.includes(c.txn)) DB.cal.push(c.txn); });
@@ -889,11 +896,13 @@ function calMark(list){
 async function takvimeEkle(list, isim){
   list = list.filter(c => c && c.due);
   if(!list.length){ toast("Takvime eklenecek vade yok"); return; }
+  DB.calSeq = (DB.calSeq || 0) + 1;   // her aktarımda artar: Takvim kaydı yeniler, kopyalamaz
+  save();
   const body = icsBody(list);
   let r;
   if(DB.calMode === "dosya"){ dl(isim, body, "text/calendar"); r = "dl"; }
   else { r = await sendFile(isim, body, "text/calendar"); }
-  if(r === "abort") return;
+  if(r === "abort" || r === "hata") return;
   calMark(list);
   toast(r === "share" ? "Listeden Takvim'i seç" : "Dosyaya dokunup Takvim'e ekle");
   refresh();
