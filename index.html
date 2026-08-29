@@ -363,7 +363,7 @@ function rawSet(v){
   catch(e){ storageOK = false; memFallback = v; }
 }
 
-const BLANK = { v:1, firma:"", lastBackup:null, calMode:"share", calSeq:0, cal:[], seq:{txn:0,M:0,F:0,B:0,id:0}, cariler:[], bankalar:[],
+const BLANK = { v:1, firma:"", lastBackup:null, calMode:"dosya", kisayolAd:"Vade Ekle", calSeq:0, cal:[], seq:{txn:0,M:0,F:0,B:0,id:0}, cariler:[], bankalar:[],
                 islemler:[], kasa:[], cariH:[], cek:[] };
 
 let DB;
@@ -378,7 +378,9 @@ function load(){
   }
 }
 function save(){ rawSet(JSON.stringify(DB)); }
-function ayarTemizle(){ if(DB && DB.calMode === "ac"){ DB.calMode = "share"; save(); } }
+function ayarTemizle(){
+  if(DB && (DB.calMode === "ac" || DB.calMode === "share")){ DB.calMode = "dosya"; save(); }
+}
 
 function seedBanks(){
   ["ZİRAAT BANKASI","DENİZBANK","İŞ BANKASI","HALKBANK","QNB","KUVEYT TÜRK",
@@ -717,12 +719,19 @@ function closeSheet(){
   $("#scrim").classList.remove("on");
 }
 $("#scrim").addEventListener("click", closeSheet);
+$("#sheet").addEventListener("input", e => {
+  if(e.target && e.target.id === "kisayolAd"){
+    DB.kisayolAd = e.target.value.trim() || "Vade Ekle"; save();
+  }
+});
 $("#sheet").addEventListener("click", e => {
   const m = e.target.closest("[data-m]");
   if(m){
     DB.calMode = m.dataset.m; save();
     Array.from(m.parentNode.children).forEach(x => x.classList.toggle("on", x === m));
-    toast(DB.calMode === "dosya" ? "Dosyaya indirilecek" : "Paylaşım penceresi açılacak");
+    const kd = $("#kisayolSatir"); if(kd) kd.style.display = DB.calMode === "kisayol" ? "block" : "none";
+    toast(DB.calMode === "kisayol" ? "Kısayol ile eklenecek"
+        : DB.calMode === "paylas" ? "Paylaşım penceresi açılacak" : "Dosyaya indirilecek");
     return;
   }
   const b = e.target.closest("[data-act]");
@@ -889,6 +898,26 @@ async function sendFile(name, text, mime){
   try{ dl(name, text, mime); return "dl"; }
   catch(e){ toast("Takvim dosyası oluşturulamadı"); return "hata"; }
 }
+/* Kısayollar (Shortcuts) yolu.
+   Her satır: vade|başlık|not   — kısayol satırları döngüyle takvime ekler. */
+function kisayolMetni(list){
+  return list.map(c => {
+    const yon = c.direction === "ALINAN" ? "Tahsilat" : "Ödeme";
+    const tur = c.doc_type === "SENET" ? "Senet" : "Çek";
+    const bas = `${yon} ${money(c.amount)} - ${cariLabel(c.cari_id)}`.replace(/[|\r\n]/g," ");
+    const not = `${tur} ${c.bank||""} ${c.ref_no||""} Fis ${c.txn}`.replace(/[|\r\n]/g," ").trim();
+    return `${c.due}|${bas}|${not}`;
+  }).join("\n");
+}
+function kisayolCalistir(list){
+  const ad = (DB.kisayolAd || "Vade Ekle").trim();
+  const url = "shortcuts://run-shortcut?name=" + encodeURIComponent(ad) +
+              "&input=text&text=" + encodeURIComponent(kisayolMetni(list));
+  const a = document.createElement("a");
+  a.href = url; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
 function calMark(list){
   list.forEach(c => { if(!DB.cal.includes(c.txn)) DB.cal.push(c.txn); });
   save();
@@ -900,11 +929,19 @@ async function takvimeEkle(list, isim){
   save();
   const body = icsBody(list);
   let r;
-  if(DB.calMode === "dosya"){ dl(isim, body, "text/calendar"); r = "dl"; }
-  else { r = await sendFile(isim, body, "text/calendar"); }
+  if(DB.calMode === "kisayol"){
+    kisayolCalistir(list);
+    calMark(list);
+    toast(list.length > 1 ? list.length + " vade takvime gönderildi" : "Takvime gönderildi");
+    refresh();
+    return;
+  }
+  if(DB.calMode === "paylas"){ r = await sendFile(isim, body, "text/calendar"); }
+  else { dl(isim, body, "text/calendar"); r = "dl"; }
   if(r === "abort" || r === "hata") return;
   calMark(list);
-  toast(r === "share" ? "Listeden Takvim'i seç" : "Dosyaya dokunup Takvim'e ekle");
+  toast(r === "share" ? "Listeden Takvim'i seç"
+                      : "İndirilenler'den dosyaya dokun, Takvim açılır");
   refresh();
 }
 
@@ -946,12 +983,18 @@ $("#btnBackup").addEventListener("click", () => {
        Bu ortamda kalıcı kayıt kapalı. Safari'de açıp ana ekrana ekle.</div>`}
     <h2 style="margin-top:4px">Takvim</h2>
     <div class="seg" id="calSeg">
-      <button data-m="share" class="${DB.calMode !== "dosya" ? "on" : ""}">Paylaşım penceresi</button>
-      <button data-m="dosya" class="${DB.calMode === "dosya" ? "on" : ""}">Dosyaya indir</button>
+      <button data-m="dosya" class="${DB.calMode === "dosya" ? "on" : ""}">Dosya</button>
+      <button data-m="kisayol" class="${DB.calMode === "kisayol" ? "on" : ""}">Kısayol</button>
+      <button data-m="paylas" class="${DB.calMode === "paylas" ? "on" : ""}">Paylaşım</button>
     </div>
-    <p class="note" style="margin-top:-4px">Paylaşım penceresinde listeden <b>Takvim</b>'i seç.
-      Takvim listede çıkmıyorsa "Dosyaya indir"e geç: dosya İndirilenler'e düşer,
-      üstüne dokununca Takvim açılır.</p>
+    <label class="f" id="kisayolSatir" style="display:${DB.calMode === "kisayol" ? "block" : "none"}">
+      <span>Kısayol adı</span>
+      <input id="kisayolAd" value="${esc(DB.kisayolAd || "Vade Ekle")}" placeholder="Vade Ekle">
+    </label>
+    <p class="note" style="margin-top:-4px"><b>Dosya:</b> kurulum gerekmez. Takvim dosyası
+      İndirilenler'e iner, üstüne dokununca Takvim'in ekleme penceresi açılır.<br>
+      <b>Kısayol:</b> Kısayollar uygulamasında bir kez kurulum ister, sonrasında dosya da
+      paylaşım da olmadan doğrudan takvime yazar.</p>
     <h2>Yedekleme</h2>
     <div class="acts">
       <button class="btn" data-act="ex">Yedek al ve Dosyalar'a kaydet</button>
