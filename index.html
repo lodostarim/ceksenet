@@ -363,7 +363,7 @@ function rawSet(v){
   catch(e){ storageOK = false; memFallback = v; }
 }
 
-const BLANK = { v:1, firma:"", lastBackup:null, calMode:"ac", cal:[], seq:{txn:0,M:0,F:0,B:0,id:0}, cariler:[], bankalar:[],
+const BLANK = { v:1, firma:"", lastBackup:null, calMode:"share", cal:[], seq:{txn:0,M:0,F:0,B:0,id:0}, cariler:[], bankalar:[],
                 islemler:[], kasa:[], cariH:[], cek:[] };
 
 let DB;
@@ -378,6 +378,7 @@ function load(){
   }
 }
 function save(){ rawSet(JSON.stringify(DB)); }
+function ayarTemizle(){ if(DB && DB.calMode === "ac"){ DB.calMode = "share"; save(); } }
 
 function seedBanks(){
   ["ZİRAAT BANKASI","DENİZBANK","İŞ BANKASI","HALKBANK","QNB","KUVEYT TÜRK",
@@ -721,7 +722,7 @@ $("#sheet").addEventListener("click", e => {
   if(m){
     DB.calMode = m.dataset.m; save();
     Array.from(m.parentNode.children).forEach(x => x.classList.toggle("on", x === m));
-    toast(DB.calMode === "ac" ? "Takvim'de açılacak" : "Paylaşım penceresi kullanılacak");
+    toast(DB.calMode === "dosya" ? "Dosyaya indirilecek" : "Paylaşım penceresi açılacak");
     return;
   }
   const b = e.target.closest("[data-act]");
@@ -864,25 +865,6 @@ function icsBody(list){
   return L.map(fold).join("\r\n");
 }
 
-/* Takvim dosyasını iOS'un "Takvim'e Ekle" penceresine yönlendirir.
-   Yöntem 1: blob adresini yeni sekmede aç -> iOS dosyayı Takvim'e devreder.
-   Yöntem 2 (yedek): paylaşım sayfası.
-   Hangisinin çalıştığı iOS sürümüne göre değişiyor; kullanıcı Ayarlar'dan seçebiliyor. */
-function takvimdeAc(text){
-  const url = URL.createObjectURL(new Blob([text], { type:"text/calendar" }));
-  let p = null;
-  try{ p = window.open(url, "_blank"); }catch(e){}
-  if(!p){
-    // ana ekrana eklenmiş uygulamada yeni sekme açılmayabilir: gizli çerçeveyle devret
-    const f = document.createElement("iframe");
-    f.style.cssText = "position:absolute;width:0;height:0;border:0;opacity:0";
-    f.src = url;
-    document.body.appendChild(f);
-    setTimeout(() => f.remove(), 20000);
-  }
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-}
-
 /* iOS'ta en güvenilir yol paylaşım sayfası; olmazsa indirme, o da olmazsa data URL */
 async function sendFile(name, text, mime){
   try{
@@ -908,18 +890,12 @@ async function takvimeEkle(list, isim){
   list = list.filter(c => c && c.due);
   if(!list.length){ toast("Takvime eklenecek vade yok"); return; }
   const body = icsBody(list);
-  const acilabilir = typeof URL !== "undefined" && typeof URL.createObjectURL === "function";
-  if((DB.calMode || "ac") === "ac" && acilabilir){
-    takvimdeAc(body);
-    calMark(list);
-    toast(list.length > 1 ? "Takvim'de \u201cTümünü Ekle\u201d de" : "Takvim'de \u201cEkle\u201d de");
-    refresh();
-    return;
-  }
-  const r = await sendFile(isim, body, "text/calendar");
+  let r;
+  if(DB.calMode === "dosya"){ dl(isim, body, "text/calendar"); r = "dl"; }
+  else { r = await sendFile(isim, body, "text/calendar"); }
   if(r === "abort") return;
   calMark(list);
-  toast(r === "share" ? "Paylaşım penceresinden Takvim'i seç" : list.length + " vade indirildi");
+  toast(r === "share" ? "Listeden Takvim'i seç" : "Dosyaya dokunup Takvim'e ekle");
   refresh();
 }
 
@@ -961,11 +937,12 @@ $("#btnBackup").addEventListener("click", () => {
        Bu ortamda kalıcı kayıt kapalı. Safari'de açıp ana ekrana ekle.</div>`}
     <h2 style="margin-top:4px">Takvim</h2>
     <div class="seg" id="calSeg">
-      <button data-m="ac" class="${(DB.calMode||"ac")==="ac"?"on":""}">Takvim'de aç</button>
-      <button data-m="share" class="${DB.calMode==="share"?"on":""}">Paylaşım penceresi</button>
+      <button data-m="share" class="${DB.calMode !== "dosya" ? "on" : ""}">Paylaşım penceresi</button>
+      <button data-m="dosya" class="${DB.calMode === "dosya" ? "on" : ""}">Dosyaya indir</button>
     </div>
-    <p class="note" style="margin-top:-4px">Vade eklerken takvim penceresi açılmıyorsa
-      diğer yöntemi dene. iPhone sürümüne göre biri çalışıyor.</p>
+    <p class="note" style="margin-top:-4px">Paylaşım penceresinde listeden <b>Takvim</b>'i seç.
+      Takvim listede çıkmıyorsa "Dosyaya indir"e geç: dosya İndirilenler'e düşer,
+      üstüne dokununca Takvim açılır.</p>
     <h2>Yedekleme</h2>
     <div class="acts">
       <button class="btn" data-act="ex">Yedek al ve Dosyalar'a kaydet</button>
@@ -1118,6 +1095,7 @@ $("#c-kaydet").addEventListener("click", () => {
 
 /* ======================= başlat ======================= */
 load();
+ayarTemizle();
 refresh();
 if("serviceWorker" in navigator){
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));

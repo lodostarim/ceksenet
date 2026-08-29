@@ -1,6 +1,6 @@
 /* Çek/Senet — çevrimdışı çalışma.
    Uygulamayı güncellediğinde SURUM numarasını artır; telefonlar yeni sürümü çeker. */
-const SURUM = "ceksenet-v2";
+const SURUM = "ceksenet-v3";
 const DOSYALAR = ["./", "./index.html", "./manifest.json",
                   "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
