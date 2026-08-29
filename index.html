@@ -744,14 +744,15 @@ function nasilSheet(adet){
   openSheet(`
     <h3>Takvime ekleme</h3>
     <div class="sub">${adet} vade için takvim dosyası hazırlandı.</div>
-    <p class="note" style="margin:0 0 6px">Açılan listede <b>Takvim</b> görünmüyorsa
-      (iPhone çoğu zaman göstermez) şunu yap:</p>
-    <div class="kv"><span class="k">1</span><span class="v">Listeden <b>Dosyalara Kaydet</b>, sonra <b>Kaydet</b></span></div>
-    <div class="kv"><span class="k">2</span><span class="v"><b>Dosyalar</b> uygulamasını aç</span></div>
-    <div class="kv"><span class="k">3</span><span class="v">Kaydettiğin <b>.ics</b> dosyasına dokun</span></div>
-    <div class="kv"><span class="k">4</span><span class="v">Sağ üstteki <b>Ekle</b> / <b>Tümünü Ekle</b></span></div>
-    <p class="note">İlk sefer uzun geliyor ama dosya hep aynı klasöre indiği için
-      sonrakiler iki dokunuş.</p>
+    <p class="note" style="margin:0 0 6px">Listede <b>Takvim</b> yoktur, aramana gerek yok.
+      <b>Dosyalara Kaydet</b> de işe yaramaz — Dosyalar'da Ekle düğmesi çıkmıyor. Şunu yap:</p>
+    <div class="kv"><span class="k">1</span><span class="v">Listeden <b>Mesajlar</b>'ı seç</span></div>
+    <div class="kv"><span class="k">2</span><span class="v">Alıcıya <b>kendi numaranı</b> yaz, gönder</span></div>
+    <div class="kv"><span class="k">3</span><span class="v">Sohbette gelen dosyaya dokun</span></div>
+    <div class="kv"><span class="k">4</span><span class="v">Açılan pencerede <b>Ekle</b> / <b>Tümünü Ekle</b></span></div>
+    <p class="note">"Ekle" düğmesi iPhone'da yalnızca Mesajlar ve Mail üzerinden açılan
+      takvim dosyalarında çıkıyor. Kendine bir kez mesaj attıktan sonra o sohbet
+      listenin başında kalır, sonraki vadeler iki dokunuş olur.</p>
     <div class="acts"><button class="btn" data-act="kapat">Tamam</button></div>`,
     { kapat(){ closeSheet(); } });
 }
