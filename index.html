@@ -740,6 +740,22 @@ $("#sheet").addEventListener("click", e => {
   if(fn) fn();
 });
 
+function nasilSheet(adet){
+  openSheet(`
+    <h3>Takvime ekleme</h3>
+    <div class="sub">${adet} vade için takvim dosyası hazırlandı.</div>
+    <p class="note" style="margin:0 0 6px">Açılan listede <b>Takvim</b> görünmüyorsa
+      (iPhone çoğu zaman göstermez) şunu yap:</p>
+    <div class="kv"><span class="k">1</span><span class="v">Listeden <b>Dosyalara Kaydet</b>, sonra <b>Kaydet</b></span></div>
+    <div class="kv"><span class="k">2</span><span class="v"><b>Dosyalar</b> uygulamasını aç</span></div>
+    <div class="kv"><span class="k">3</span><span class="v">Kaydettiğin <b>.ics</b> dosyasına dokun</span></div>
+    <div class="kv"><span class="k">4</span><span class="v">Sağ üstteki <b>Ekle</b> / <b>Tümünü Ekle</b></span></div>
+    <p class="note">İlk sefer uzun geliyor ama dosya hep aynı klasöre indiği için
+      sonrakiler iki dokunuş.</p>
+    <div class="acts"><button class="btn" data-act="kapat">Tamam</button></div>`,
+    { kapat(){ closeSheet(); } });
+}
+
 function evrakSheet(txn){
   const c = DB.cek.find(x => x.txn === txn);
   if(!c) return;
@@ -918,6 +934,14 @@ function kisayolCalistir(list){
   document.body.appendChild(a); a.click(); a.remove();
 }
 
+function anaEkranModu(){
+  // Sabit değil, çağrı anında bakılır: aynı adres hem sekmede hem ana ekranda açılabiliyor.
+  if(window.navigator.standalone === true) return true;
+  if(typeof window.matchMedia === "function")
+    return window.matchMedia("(display-mode: standalone)").matches === true;
+  return false;
+}
+
 function calMark(list){
   list.forEach(c => { if(!DB.cal.includes(c.txn)) DB.cal.push(c.txn); });
   save();
@@ -936,13 +960,20 @@ async function takvimeEkle(list, isim){
     refresh();
     return;
   }
-  if(DB.calMode === "paylas"){ r = await sendFile(isim, body, "text/calendar"); }
-  else { dl(isim, body, "text/calendar"); r = "dl"; }
+  const MIME = "text/calendar;charset=utf-8";
+  // Ana ekrana eklenmiş uygulamada iOS dosya indirmeyi çalıştırmıyor:
+  // dosya sessizce kaybolmasın diye paylaşım yoluna geçiyoruz.
+  const dosyaCalismaz = anaEkranModu() && !!navigator.share;
+  if(DB.calMode === "paylas" || (DB.calMode === "dosya" && dosyaCalismaz)){
+    r = await sendFile(isim, body, MIME);
+  }else{
+    dl(isim, body, MIME); r = "dl";
+  }
   if(r === "abort" || r === "hata") return;
   calMark(list);
-  toast(r === "share" ? "Listeden Takvim'i seç"
-                      : "İndirilenler'den dosyaya dokun, Takvim açılır");
   refresh();
+  if(r === "share") nasilSheet(list.length);
+  else toast("İndirilenler'den dosyaya dokun");
 }
 
 $("#k-cal").addEventListener("click", () => {
